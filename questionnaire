@@ -1,22 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { saveAs } from "file-saver";
-import axios from "axios";
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, serverTimestamp } from "firebase/firestore";
-
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 
 const questions = [
   {
@@ -39,23 +23,10 @@ const questions = [
   }
 ];
 
-const EPRQuestionnaire = () => {
+const EPRSelfAssessment = () => {
   const [answers, setAnswers] = useState({});
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [result, setResult] = useState(null);
-
-  useEffect(() => {
-    fetchAmazonData();
-  }, []);
-
-  const fetchAmazonData = async () => {
-    try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/amazon-data`);
-      console.log("Amazon SKU Data:", response.data);
-    } catch (error) {
-      console.error("Error fetching Amazon data:", error);
-    }
-  };
 
   const handleAnswer = (answer) => {
     setAnswers({ ...answers, [questions[currentQuestion].id]: answer });
@@ -78,36 +49,6 @@ const EPRQuestionnaire = () => {
       needsEPR.Spain = true;
     }
     setResult(needsEPR);
-    saveToDatabase(needsEPR);
-    sendEmailNotification(needsEPR);
-  };
-
-  const saveToDatabase = async (data) => {
-    try {
-      await addDoc(collection(db, "epr_responses"), {
-        answers,
-        result: data,
-        timestamp: serverTimestamp(),
-      });
-      console.log("Data saved successfully");
-    } catch (error) {
-      console.error("Error saving data:", error);
-    }
-  };
-
-  const sendEmailNotification = async (data) => {
-    try {
-      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/send-email`, { result: data });
-      console.log("Email notification sent successfully");
-    } catch (error) {
-      console.error("Error sending email notification:", error);
-    }
-  };
-
-  const generatePDF = () => {
-    const content = JSON.stringify(result, null, 2);
-    const blob = new Blob([content], { type: "application/json" });
-    saveAs(blob, "EPR_Compliance_Report.pdf");
   };
 
   return (
@@ -125,7 +66,6 @@ const EPRQuestionnaire = () => {
             ) : (
               <p>✅ You do not need EPR reporting in these countries.</p>
             )}
-            <Button onClick={generatePDF} className="mt-4">Download Report</Button>
           </div>
         ) : (
           <div>
@@ -148,4 +88,4 @@ const EPRQuestionnaire = () => {
   );
 };
 
-export default EPRQuestionnaire;
+export default EPRSelfAssessment;
